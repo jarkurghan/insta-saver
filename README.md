@@ -12,7 +12,7 @@ Bu loyiha `bun` yordamida ishlaydigan, `grammy` kutubxonasi asosida yozilgan Tel
 
 ## O'rnatish
 
-Loyihani klonlash:
+Kodni klonlash:
 
 ```bash
 git clone https://github.com/jarkurghan/insta-saver.git
@@ -38,13 +38,13 @@ Bot ishlashi uchun Telegram token kerak. Uni \*.env faylda yoki quyidagicha term
 Linux / macOS (bash/zsh):
 
 ```bash
-export TELEGRAM_BOT_TOKEN="<YOUR_TELEGRAM_BOT_TOKEN>"
+export TELEGRAM_BOT_TOKEN="<BOT_TOKEN>"
 ```
 
 Windows (PowerShell):
 
 ```powershell
-$env:TELEGRAM_BOT_TOKEN = "<YOUR_TELEGRAM_BOT_TOKEN>"
+$env:TELEGRAM_BOT_TOKEN = "<BOT_TOKEN>"
 ```
 
 ## Ishga tushirish (dev)
@@ -55,21 +55,21 @@ $env:TELEGRAM_BOT_TOKEN = "<YOUR_TELEGRAM_BOT_TOKEN>"
 }
 ```
 
-Dev rejimida botni ishga tushirish:
+Botni ishga tushirish:
 
 ```bash
 bun run dev
 ```
 
-Server boshlangach konsolda `🤖 Bot ishga tushdi...` yozuvi ko'rinadi va bot hozirdan foydalanishga tayyor bo'ladi.
+Server boshlangach konsolda `🤖 Bot ishga tushdi...` yozuvi ko'rinadi va shu bilan bot foydalanishga tayyor bo'ladi.
 
 ## Qanday ishlaydi — qisqacha
 
 1. Foydalanuvchi `/start` yuborsa, bot xush kelibsiz xabar qaytaradi.
-2. Foydalanuvchi matnli xabar yuboradi — agar u `instagram.com` domenini o'z ichiga olmasa, bot so'rab qaytaradi.
+2. Foydalanuvchi matnli xabar yuboradi.
 3. `instagram-url-direct` paketidan `instagramGetUrl(url)` chaqiriladi.
-4. Agar `result.url_list` mavjud bo'lsa, birinchi URL video sifatida chatga yuboriladi.
-5. Agar xatolik bo'lsa yoki post shaxsiy bo'lsa, foydalanuvchiga xato haqida xabar yuboriladi.
+4. Agar `result.url_list` mavjud bo'lsa, URL video sifatida chatga yuboriladi.
+5. Agar xatolik bo'lsa, foydalanuvchiga xato haqida xabar yuboriladi.
 
 ## Muallif
 
