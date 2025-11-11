@@ -65,15 +65,13 @@ Server boshlangach konsolda `🤖 Bot ishga tushdi...` yozuvi ko'rinadi va shu b
 
 ## Qanday ishlaydi — qisqacha
 
-1. Foydalanuvchi `/start` yuborsa, bot xush kelibsiz xabar qaytaradi.
-2. Foydalanuvchi matnli xabar yuboradi.
-3. `instagram-url-direct` paketidan `instagramGetUrl(url)` chaqiriladi.
-4. Agar `result.url_list` mavjud bo'lsa, URL video sifatida chatga yuboriladi.
-5. Agar xatolik bo'lsa, foydalanuvchiga xato haqida xabar yuboriladi.
+1. Foydalanuvchi `/start` yuborsa, bot `xush kelibsiz` xabar qaytaradi.
+2. Foydalanuvchi matnli xabar yuboradi, ya'ni instagram video havolasini.
+3. `instagram-url-direct` paketidan `instagramGetUrl(url)` chaqiriladi va url orqali video foydalanuvchiga qaytariladi.
 
 ## Muallif
 
-[@jarkurghan](https://t.me/jarkurghan) — loyiha muallifi.
+[@jarkurghan](https://t.me/najmiddin_nazirov) — loyiha muallifi.
 
 ## Litsenziya
 
