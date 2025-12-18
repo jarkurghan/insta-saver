@@ -1,8 +1,5 @@
 import { Bot, Context, InputFile } from "grammy";
-import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
-import path from "path";
-import fs from "fs/promises";
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
 
@@ -21,9 +18,6 @@ bot.on("message:text", async (ctx) => {
     await ctx.replyWithChatAction("upload_video");
 
     try {
-        const fileName = `${uuidv4()}.mp4`;
-        const filePath = path.join(process.cwd(), "videos", fileName);
-
         const urlObj = new URL(ctx.message.text);
         urlObj.hostname = "kkinstagram.com";
         urlObj.searchParams.set("utm_source", "ig_web_copy_link");
@@ -32,10 +26,8 @@ bot.on("message:text", async (ctx) => {
         const headers = { "User-Agent": "TelegramBot (like TwitterBot)" };
         const { data } = await axios({ url, headers, method: "GET", responseType: "arraybuffer" });
 
-        await fs.writeFile(filePath, data);
-        await ctx.replyWithVideo(new InputFile(filePath), { caption: "✅ @insta_yuklagich_bot orqali yuklab olindi" });
+        await ctx.replyWithVideo(new InputFile(data, "video.mp4"), { caption: "✅ @insta_yuklagich_bot orqali yuklab olindi", supports_streaming: true });
         await ctx.api.deleteMessage(ctx.chat.id, processingMessage.message_id);
-        await fs.unlink(filePath);
     } catch (err) {
         await ctx.api.deleteMessage(ctx.chat.id, processingMessage.message_id);
         console.error("Download Error:", err);
