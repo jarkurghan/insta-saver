@@ -1,5 +1,8 @@
-import { Bot, Context } from "grammy";
-const ig = require("instagram-url-direct");
+import { Bot, Context, InputFile } from "grammy";
+import { v4 as uuidv4 } from "uuid";
+import axios from "axios";
+import path from "path";
+import fs from "fs/promises";
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
 
@@ -10,9 +13,7 @@ bot.command("start", (ctx) => {
 });
 
 bot.on("message:text", async (ctx) => {
-    const url = ctx.message.text;
-
-    if (!url.includes("instagram.com")) {
+    if (!ctx.message.text.includes("instagram.com")) {
         return ctx.reply("Iltimos, **Instagram video havolasini** yuboring ♻️", { parse_mode: "Markdown" });
     }
 
@@ -20,18 +21,21 @@ bot.on("message:text", async (ctx) => {
     await ctx.replyWithChatAction("upload_video");
 
     try {
-        const result = await ig.instagramGetUrl(url);
+        const fileName = `${uuidv4()}.mp4`;
+        const filePath = path.join(process.cwd(), "videos", fileName);
 
-        if (result.url_list && result.url_list.length > 0) {
-            const videoUrl = result.url_list[0];
+        const urlObj = new URL(ctx.message.text);
+        urlObj.hostname = "kkinstagram.com";
+        urlObj.searchParams.set("utm_source", "ig_web_copy_link");
 
-            await ctx.replyWithVideo(videoUrl, { caption: "✅ @insta_yuklagich_bot orqali yuklab olindi" });
+        const url = urlObj.toString().replaceAll("%3D", "=");
+        const headers = { "User-Agent": "TelegramBot (like TwitterBot)" };
+        const { data } = await axios({ url, headers, method: "GET", responseType: "arraybuffer" });
 
-            await ctx.api.deleteMessage(ctx.chat.id, processingMessage.message_id);
-        } else {
-            await ctx.api.deleteMessage(ctx.chat.id, processingMessage.message_id);
-            ctx.reply("Videoni topib bo‘lmadi ❌");
-        }
+        await fs.writeFile(filePath, data);
+        await ctx.replyWithVideo(new InputFile(filePath), { caption: "✅ @insta_yuklagich_bot orqali yuklab olindi" });
+        await ctx.api.deleteMessage(ctx.chat.id, processingMessage.message_id);
+        await fs.unlink(filePath);
     } catch (err) {
         await ctx.api.deleteMessage(ctx.chat.id, processingMessage.message_id);
         console.error("Download Error:", err);
