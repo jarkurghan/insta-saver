@@ -4,7 +4,6 @@ import { InputFile } from "grammy";
 import { webhookCallback } from "grammy";
 import { type SessionFlavor } from "grammy";
 import { createClient } from "@supabase/supabase-js";
-import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import axios from "axios";
 
@@ -105,5 +104,4 @@ bot.catch((err) => {
 app.post("/", webhookCallback(bot, "hono"));
 app.get("/", (c) => c.text("Bot ishlamoqda!"));
 
-serve({ fetch: app.fetch, port: 3000 });
 export default app;
