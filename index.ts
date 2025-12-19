@@ -1,8 +1,11 @@
 import { Bot } from "grammy";
 import { Context } from "grammy";
 import { InputFile } from "grammy";
+import { webhookCallback } from "grammy";
 import { type SessionFlavor } from "grammy";
 import { createClient } from "@supabase/supabase-js";
+import { serve } from "@hono/node-server";
+import { Hono } from "hono";
 import axios from "axios";
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
@@ -21,6 +24,7 @@ interface User {
     username: string | null;
 }
 
+const app = new Hono();
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 const bot = new Bot<MyContext>(BOT_TOKEN);
 
@@ -98,4 +102,8 @@ bot.catch((err) => {
     if (err.error instanceof Error) console.error(err.error.message);
 });
 
-bot.start({ onStart: () => console.log("🤖 Bot ishga tushdi...") });
+app.post("/", webhookCallback(bot, "hono"));
+app.get("/", (c) => c.text("Bot ishlamoqda!"));
+
+serve({ fetch: app.fetch, port: 3000 });
+export default app;
