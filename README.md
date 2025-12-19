@@ -2,76 +2,77 @@
 
 Telegram bot — Instagramdagi video havolalaridan to'g'ridan-to'g'ri videoni yuklab olishga yordam beradi.
 
+Ushbu bot telegram foydalanuvchilariga instagram-dan video va reelslarni osonlik bilan yuklab olish imkonini beradi. Foydalanuvchi ma'lumotlari **supabase** ma'lumotlar bazasida saqlanadi va yangi foydalanuvchilar haqida adminga xabar yuboriladi.
 
-Bu loyiha `bun` yordamida ishlaydigan, `grammy` kutubxonasi asosida yozilgan Telegram bot. Foydalanuvchi Instagram post havolasini yuboradi, bot `instagram-url-direct` orqali video manzilini oladi va videoni chatga yuboradi.
+## ✨ Xususiyatlari
 
-## Talablar
+-   **Video Yuklash:** Instagram havolasini yuborish orqali videoni to'g'ridan-to'g'ri telegramda olish.
+-   **Foydalanuvchilarni Boshqarish:** Supabase integratsiyasi orqali foydalanuvchilarni bazaga saqlash.
+-   **UTM Tracking:** Foydalanuvchilar qaysi manbadan kelganini kuzatish (UTM parametrlar orqali).
+-   **Admin Bildirishnomalari:** Yangi foydalanuvchi qo'shilganda adminga ma'lumot yuborish.
 
--   Bun yoki Node.js >= 18
--   Telegram bot token (environment variable): `TELEGRAM_BOT_TOKEN`.
+## 🛠 Texnologiyalar
 
-## O'rnatish
+-   [grammY](https://grammy.dev/) - Telegram bot framework.
+-   [Supabase](https://supabase.com/) - Ma'lumotlar bazasi.
+-   [Axios](https://axios-http.com/)
+-   [TypeScript](https://www.typescriptlang.org/)
 
-Kodni klonlash:
+## 🚀 O'rnatish va Ishga tushirish
 
-```bash
-git clone https://github.com/jarkurghan/insta-saver.git
-cd insta-saver
-```
+1.  **Reponi klonlang:**
 
-Bog'liqliklarni o'rnating (bun tavsiya qilinadi):
+    ```bash
+    git clone [https://github.com/jarkurghan/insta-saver.git](https://github.com/jarkurghan/insta-saver.git)
+    cd insta-saver
+    ```
 
-```bash
-bun install
-```
+2.  **paketlarni o'rnating:**
 
-> Agar siz `npm` ishlatayotgan bo'lsangiz:
->
-> ```bash
-> npm install
-> ```
+    ```bash
+    npm install
+    ```
 
-## Muhit o'zgaruvchilar
+3.  **Muhit o'zgaruvchilarini sozlang (`.env` fayli yarating):**
 
-Bot ishlashi uchun Telegram token kerak. Uni \*.env faylda yoki quyidagicha terminalda o'rnatishingiz mumkin.
+    ```env
+    TELEGRAM_BOT_TOKEN=...
+    SUPABASE_URL=...
+    SUPABASE_KEY=...
+    ADMIN_CHAT_ID=...
+    TABLE_NAME=...
+    ```
 
-Linux / macOS (bash/zsh):
+4.  **Botni ishga tushiring:**
+    ```bash
+    npm start
+    ```
 
-```bash
-export TELEGRAM_BOT_TOKEN="<BOT_TOKEN>"
-```
+## 📊 Ma'lumotlar Bazasi Tuzilishi (Supabase)
 
-Windows (PowerShell):
+Supabase-da `TABLE_NAME` (masalan: `users`) jadvalini quyidagi ustunlar bilan yarating:
 
-```powershell
-$env:TELEGRAM_BOT_TOKEN = "<BOT_TOKEN>"
-```
+-   `tg_id` (int8/unique) - Foydalanuvchi IDsi.
+-   `first_name` (text) - Ismi.
+-   `last_name` (text, nullable) - Familiyasi.
+-   `username` (text, nullable) - Telegram username.
 
-## Ishga tushirish (dev)
+## 📝 Ishlash tartibi
 
-```json
-"scripts": {
-  "dev": "bun --watch index.ts"
-}
-```
+1.  Foydalanuvchi `/start` bosganda, bot uning ma'lumotlarini bazada bor-yo'qligini tekshiradi.
+2.  Agar yangi foydalanuvchi bo'lsa, adminga xabar yuboradi.
+3.  Foydalanuvchi Instagram havolasini yuborganida, bot `kkinstagram.com` proksi xizmati orqali videoni yuklab oladi va foydalanuvchiga yuboradi.
 
-Botni ishga tushirish:
+## ⚠️ Eslatma
 
-```bash
-bun run dev
-```
+Agar Instagram o'z algoritmlarini o'zgartirsa, yuklash jarayonida uzilishlar bo'lishi mumkin.
 
-Server boshlangach konsolda `🤖 Bot ishga tushdi...` yozuvi ko'rinadi va shu bilan bot foydalanishga tayyor bo'ladi.
-
-## Qanday ishlaydi — qisqacha
-
-1. Foydalanuvchi `/start` yuborsa, bot `xush kelibsiz` xabar qaytaradi.
-2. Foydalanuvchi matnli xabar yuboradi, ya'ni instagram video havolasini.
-3. `instagram-url-direct` paketidan `instagramGetUrl(url)` chaqiriladi va url orqali video foydalanuvchiga qaytariladi.
+---
 
 ## Muallif
 
 [@jarkurghan](https://t.me/najmiddin_nazirov) — loyiha muallifi.
+[@devkokand](https://t.me/devkokand) — dasturchi.
 
 ## Litsenziya
 
