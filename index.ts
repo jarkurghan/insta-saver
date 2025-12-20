@@ -90,6 +90,8 @@ bot.command("start", async (ctx) => {
 bot.on("message:text", async (ctx) => {
     try {
         const messageURL = extractInstagramUrls(ctx.message.text)[0];
+        console.log(ctx.message.text, messageURL);
+        
         if (!messageURL) {
             if (ctx.chat.type === "private") return ctx.reply("Iltimos, **instagram video havolasini** yuboring ♻️", { parse_mode: "Markdown" });
             else return;
@@ -100,7 +102,7 @@ bot.on("message:text", async (ctx) => {
 
         const data = await getVideo(messageURL);
 
-        await ctx.replyWithVideo(new InputFile(data, "video.mp4"), { caption: "✅ @insta_yuklagich_bot orqali yuklab olindi", supports_streaming: true });
+        await ctx.replyWithVideo(new InputFile(data, "video.mp4"), { caption: "✅ @insta_yuklagich_bot orqali yuklab olindi" });
         await ctx.api.deleteMessage(ctx.chat.id, processingMessage.message_id);
     } catch (err) {
         console.error("Download Error:", err);
