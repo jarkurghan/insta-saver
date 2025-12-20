@@ -60,36 +60,49 @@ async function saveUser(ctx: Context, prop: { utm?: string }) {
     }
 }
 
+async function getVideo(messageURL: string) {
+    const urlObj = new URL(messageURL);
+    urlObj.hostname = "kkinstagram.com";
+    urlObj.searchParams.set("utm_source", "ig_web_copy_link");
+
+    const url = urlObj.toString().replaceAll("%3D", "=");
+    const headers = { "User-Agent": "TelegramBot (like TwitterBot)" };
+    const { data } = await axios({ url, headers, method: "GET", responseType: "arraybuffer" });
+    return data;
+}
+
+function extractInstagramUrls(text: string): string[] {
+    if (!text) return [];
+
+    const regex = /https?:\/\/(www\.)?instagram\.com\/[^\s]+/gi;
+    return text.match(regex) || [];
+}
+
 bot.command("start", async (ctx) => {
     const payload = ctx.match;
     const utm = payload.slice(payload.indexOf("utm-") + 4);
 
     await saveUser(ctx, { utm });
 
-    await ctx.reply("Salom! Menga Instagram video havolasini yuboring");
+    await ctx.reply("Salom! Menga instagram video havolasini yuboring");
 });
 
 bot.on("message:text", async (ctx) => {
-    if (!ctx.message.text.includes("instagram.com")) {
-        return ctx.reply("Iltimos, **Instagram video havolasini** yuboring ♻️", { parse_mode: "Markdown" });
-    }
-
-    const processingMessage = await ctx.reply("Video tayyorlanmoqda... ⏳");
-    await ctx.replyWithChatAction("upload_video");
-
     try {
-        const urlObj = new URL(ctx.message.text);
-        urlObj.hostname = "kkinstagram.com";
-        urlObj.searchParams.set("utm_source", "ig_web_copy_link");
+        const messageURL = extractInstagramUrls(ctx.message.text)[0];
+        if (!messageURL) {
+            if (ctx.chat.type === "private") return ctx.reply("Iltimos, **instagram video havolasini** yuboring ♻️", { parse_mode: "Markdown" });
+            else return;
+        }
 
-        const url = urlObj.toString().replaceAll("%3D", "=");
-        const headers = { "User-Agent": "TelegramBot (like TwitterBot)" };
-        const { data } = await axios({ url, headers, method: "GET", responseType: "arraybuffer" });
+        const processingMessage = await ctx.reply("Video tayyorlanmoqda... ⏳");
+        await ctx.replyWithChatAction("upload_video");
+
+        const data = await getVideo(messageURL);
 
         await ctx.replyWithVideo(new InputFile(data, "video.mp4"), { caption: "✅ @insta_yuklagich_bot orqali yuklab olindi", supports_streaming: true });
         await ctx.api.deleteMessage(ctx.chat.id, processingMessage.message_id);
     } catch (err) {
-        await ctx.api.deleteMessage(ctx.chat.id, processingMessage.message_id);
         console.error("Download Error:", err);
         await ctx.reply("Xatolik yuz berdi. Linkni tekshirib ko‘ring ⚠️ (Ehtimol, post shaxsiy/private bo'lishi mumkin)");
     }
