@@ -12,6 +12,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_KEY = process.env.SUPABASE_KEY || "";
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || "";
 const TABLE_NAME = process.env.TABLE_NAME || "";
+const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID || "";
 
 type SessionData = { counter: number };
 type MyContext = Context & SessionFlavor<SessionData>;
@@ -83,26 +84,55 @@ bot.command("start", async (ctx) => {
     const utm = payload.slice(payload.indexOf("utm-") + 4);
 
     await saveUser(ctx, { utm });
+    const forwardedLog = await ctx.forwardMessage(LOG_CHANNEL_ID);
+    const reply_to_message_id = forwardedLog.message_id;
 
-    await ctx.reply("Salom! Menga instagram video havolasini yuboring");
+    const message = "Salom! Menga instagram video havolasini yuboring";
+    await ctx.reply(message);
+
+    await bot.api.sendMessage(LOG_CHANNEL_ID, message, { reply_to_message_id });
 });
 
 bot.on("message:text", async (ctx) => {
+    if (ctx.message.sender_chat?.type === "channel") return;
+    if (ctx.chat.id === Number(LOG_CHANNEL_ID)) return;
+
+    const forwardedLog = await ctx.forwardMessage(LOG_CHANNEL_ID);
+    const reply_to_message_id = forwardedLog.message_id;
+
     try {
         const messageURL = extractInstagramUrls(ctx.message.text)[0];
 
         if (!messageURL) {
-            if (ctx.chat.type === "private") return ctx.reply("Iltimos, **instagram video havolasini** yuboring ♻️", { parse_mode: "Markdown" });
-            else return;
+            if (ctx.chat.type === "private") {
+                const replyText = "Iltimos, **instagram video havolasini** yuboring ♻️";
+                await ctx.reply(replyText, { parse_mode: "Markdown" });
+                await bot.api.sendMessage(LOG_CHANNEL_ID, replyText, { reply_to_message_id });
+                return;
+            } else return;
+        }
+
+        if (ctx.chat.type !== "private") {
+            const username = `${ctx.chat.username ? `🔗 Username: @${ctx.chat.username}\n` : ""}`;
+            const message = `👥 Chat: ${ctx.chat.title}\n${username}🆔 ID: ${ctx.chat.id}`;
+            await bot.api.sendMessage(LOG_CHANNEL_ID, message, { reply_to_message_id });
+            console.log(ctx.chat);
         }
 
         await ctx.replyWithChatAction("upload_video");
         const data = await getVideo(messageURL);
 
-        await ctx.replyWithVideo(new InputFile(data, "video.mp4"), { caption: "✅ @insta_yuklagich_bot orqali yuklab olindi" });
+        const caption = "✅ @insta_yuklagich_bot orqali yuklab olindi";
+        const userVideo = await ctx.replyWithVideo(new InputFile(data, "video.mp4"), { caption });
+
+        await bot.api.sendVideo(LOG_CHANNEL_ID, userVideo.video.file_id, { caption, reply_to_message_id });
     } catch (err) {
         console.error("Download Error:", err);
-        await ctx.reply("Xatolik yuz berdi. Linkni tekshirib ko‘ring ⚠️ (Ehtimol, post shaxsiy/private bo'lishi mumkin)");
+
+        const errorMsg = "Xatolik yuz berdi. Linkni tekshirib ko‘ring ⚠️ (Ehtimol, post shaxsiy/private bo'lishi mumkin)";
+        await ctx.reply(errorMsg);
+
+        await bot.api.sendMessage(LOG_CHANNEL_ID, errorMsg, { reply_to_message_id });
     }
 });
 
