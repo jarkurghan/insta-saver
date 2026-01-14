@@ -112,15 +112,16 @@ bot.on("message:text", async (ctx) => {
         await ctx.replyWithVideo(new InputFile(data, "video.mp4"), { caption: "✅ @insta_yuklagich_bot orqali yuklab olindi" });
     } catch (err) {
         console.error(err);
-
-        await ctx.reply("Xatolik yuz berdi. Linkni tekshirib ko‘ring ⚠️ (Ehtimol, post shaxsiy/private bo'lishi mumkin)");
+        if (ctx.chat.type === "private") {
+            await ctx.reply("Xatolik yuz berdi. Linkni tekshirib ko‘ring ⚠️ (Ehtimol, post shaxsiy/private bo'lishi mumkin)");
+        }
 
         const forwardedLog = await ctx.forwardMessage(LOG_CHANNEL_ID);
         const reply_to_message_id = forwardedLog.message_id;
         if (err instanceof Error) {
             await bot.api.sendMessage(LOG_CHANNEL_ID, err.message, { reply_to_message_id });
         } else {
-            bot.api.sendMessage(LOG_CHANNEL_ID, `Xato: ${err}`, { reply_to_message_id });
+            await bot.api.sendMessage(LOG_CHANNEL_ID, `Xato: ${err}`, { reply_to_message_id });
         }
     }
 });
@@ -130,7 +131,7 @@ bot.on("my_chat_member", async (ctx) => {
         await ctx.reply("Guruhga qo'shilganimdan xursandman! Men **instagram video havolasini** yuborilsa darxol o'sha videoni tashlab beraman. ");
 
         const username = `${ctx.chat.username ? `🔗 Username: @${ctx.chat.username}\n` : ""}`;
-        const message = `🆕 Guruhga qo'shilish:\n\n` + `👥 Chat: ${ctx.chat.title}\n${username}🆔 ID: ${ctx.chat.id}` + `🤖 Bot: @insta_yuklagich_bot`;
+        const message = `🆕 Guruhga qo'shilish:\n\n` + `👥 Chat: ${ctx.chat.title}\n${username}🆔 ID: ${ctx.chat.id}\n` + `🤖 Bot: @insta_yuklagich_bot`;
 
         await bot.api.sendMessage(ADMIN_CHAT_ID, message);
     } catch (err) {
