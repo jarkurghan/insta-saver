@@ -109,7 +109,12 @@ bot.on("message:text", async (ctx) => {
         await ctx.replyWithChatAction("upload_video");
         const data = await getVideo(messageURL);
 
-        await ctx.replyWithVideo(new InputFile(data, "video.mp4"), { caption: "✅ @insta_yuklagich_bot orqali yuklab olindi" });
+        const caption = "✅ @insta_yuklagich_bot orqali yuklab olindi";
+        if (ctx.chat.type === "private") {
+            await ctx.replyWithVideo(new InputFile(data, "video.mp4"), { caption });
+        } else {
+            await ctx.replyWithVideo(new InputFile(data, "video.mp4"), { caption, reply_parameters: { message_id: ctx.message.message_id } });
+        }
     } catch (err) {
         console.error(err);
         if (ctx.chat.type === "private") {
