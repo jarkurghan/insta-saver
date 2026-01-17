@@ -33,12 +33,7 @@ async function saveUser(ctx: Context, prop: { utm?: string }) {
         const user = ctx.from;
         if (!user) return [];
 
-        const userData: User = {
-            tg_id: user.id,
-            first_name: user.first_name,
-            last_name: user.last_name || null,
-            username: user.username || null,
-        };
+        const userData: User = { tg_id: user.id, first_name: user.first_name, last_name: user.last_name || null, username: user.username || null };
 
         const { data } = await supabase.from(TABLE_NAME).select("tg_id").eq("tg_id", userData.tg_id).maybeSingle();
         if (!data) {
@@ -50,7 +45,7 @@ async function saveUser(ctx: Context, prop: { utm?: string }) {
                     `🔗 Username: ${user.username ? `@${user.username}` : "Noma'lum"}\n` +
                     `🆔 ID: ${user.id}\n` +
                     `🚪 UTM Source: ${utm}\n` +
-                    `🤖 Bot: @insta_yuklagich_bot`
+                    `🤖 Bot: @insta_yuklagich_bot`,
             );
         }
 
@@ -109,7 +104,12 @@ bot.on("message:text", async (ctx) => {
         await ctx.replyWithChatAction("upload_video");
         const data = await getVideo(messageURL);
 
-        await ctx.replyWithVideo(new InputFile(data, "video.mp4"), { caption: "✅ @insta_yuklagich_bot orqali yuklab olindi" });
+        const caption = "✅ @insta_yuklagich_bot orqali yuklab olindi";
+        if (ctx.chat.type === "private") {
+            await ctx.replyWithVideo(new InputFile(data, "video.mp4"), { caption });
+        } else {
+            await ctx.replyWithVideo(new InputFile(data, "video.mp4"), { caption, reply_parameters: { message_id: ctx.message.message_id } });
+        }
     } catch (err) {
         console.error(err);
         if (ctx.chat.type === "private") {
@@ -128,7 +128,8 @@ bot.on("message:text", async (ctx) => {
 
 bot.on("my_chat_member", async (ctx) => {
     try {
-        await ctx.reply("Guruhga qo'shilganimdan xursandman! Men **instagram video havolasini** yuborilsa darxol o'sha videoni tashlab beraman. ");
+        const replyText = "Guruhga qo'shilganimdan xursandman! Men **instagram video havolasini** yuborilsa darxol o'sha videoni tashlab beraman";
+        await ctx.reply(replyText, { parse_mode: "Markdown" });
 
         const username = `${ctx.chat.username ? `🔗 Username: @${ctx.chat.username}\n` : ""}`;
         const message = `🆕 Guruhga qo'shilish:\n\n` + `👥 Chat: ${ctx.chat.title}\n${username}🆔 ID: ${ctx.chat.id}\n` + `🤖 Bot: @insta_yuklagich_bot`;
