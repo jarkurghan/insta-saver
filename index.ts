@@ -128,6 +128,8 @@ bot.on("message:text", async (ctx) => {
 
 bot.on("my_chat_member", async (ctx) => {
     try {
+        if (ctx.chat.type !== "group" && ctx.chat.type !== "supergroup") return;
+
         const replyText = "Guruhga qo'shilganimdan xursandman! Men **instagram video havolasini** yuborilsa darxol o'sha videoni tashlab beraman";
         await ctx.reply(replyText, { parse_mode: "Markdown" });
 
