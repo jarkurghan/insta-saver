@@ -8,6 +8,7 @@ export const isu = pgTable(
         first_name: text("first_name"),
         last_name: text("last_name"),
         username: text("username"),
+        referred_by: integer("referred_by"),
         today_count: integer("today_count").default(0).notNull(),
         total_count: integer("total_count").default(0).notNull(),
         status: text("status", { enum: ["active", "deleted_account", "has_blocked", "other"] })
