@@ -1,5 +1,5 @@
 import type { BotError, Context } from "grammy";
-import { sendLog } from "@/services/log";
+import { sendLog } from "../services/log";
 
 export async function registerErrorHandler(err: BotError<Context>) {
     const ctx = err.ctx;

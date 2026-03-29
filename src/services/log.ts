@@ -6,11 +6,18 @@ function escapeForTelegramHtml(text: string): string {
     return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+/** HTML <pre> ichida xavfsiz ko‘rsatish uchun */
+export function formatLogError(err: unknown): string {
+    if (err instanceof Error) {
+        const text = err.stack || err.message;
+        return escapeForTelegramHtml(text);
+    }
+    return escapeForTelegramHtml(String(err));
+}
+
 export const sendLog = async (message: string, options?: LogOptions): Promise<void> => {
     try {
         const { parse_mode = "HTML", reply_to_message_id } = options || {};
-
-        // const safeMessage = parse_mode === "HTML" ? escapeForTelegramHtml(message) : message;
 
         if (reply_to_message_id) {
             await bot.api.sendMessage(LOG_CHANNEL_ID, message, {
@@ -23,6 +30,6 @@ export const sendLog = async (message: string, options?: LogOptions): Promise<vo
             });
         }
     } catch (error) {
-        console.error("System error:", error);
+        console.error("sendLog xatosi:", error);
     }
 };

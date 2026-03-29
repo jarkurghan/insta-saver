@@ -1,10 +1,10 @@
-import { bot } from "@/bot";
 import { Context } from "grammy";
 import { InputFile } from "grammy";
 import { type Filter } from "grammy";
 import { LOG_CHANNEL_ID } from "@/utils/constants";
 import axios from "axios";
 import { counter } from "@/services/counter";
+import { formatLogError, sendLog } from "@/services/log";
 
 async function getVideo(messageURL: string) {
     const urlObj = new URL(messageURL);
@@ -56,19 +56,26 @@ export const onMessageText = async (ctx: Filter<Context, "message:text">) => {
             await counter(ctx);
         }
     } catch (err) {
-        console.error(err);
-        if (ctx.chat.type === "private") {
-            await ctx.reply(
-                "Xatolik yuz berdi. Linkni tekshirib ko‘ring ⚠️ (Ehtimol, post shaxsiy/private bo'lishi mumkin)",
-            );
-        }
+        try {
+            if (ctx.chat.type === "private") {
+                await ctx.reply(
+                    "Xatolik yuz berdi. Linkni tekshirib ko‘ring ⚠️ (Ehtimol, post shaxsiy/private bo'lishi mumkin)",
+                );
+            }
 
-        const forwardedLog = await ctx.forwardMessage(LOG_CHANNEL_ID);
-        const reply_to_message_id = forwardedLog.message_id;
-        if (err instanceof Error) {
-            await bot.api.sendMessage(LOG_CHANNEL_ID, err.message, { reply_to_message_id });
-        } else {
-            await bot.api.sendMessage(LOG_CHANNEL_ID, `Xato: ${err}`, { reply_to_message_id });
+            const forwardedLog = await ctx.forwardMessage(LOG_CHANNEL_ID);
+            const reply_to_message_id = forwardedLog.message_id;
+            await sendLog(`<b>onMessageText</b>\n<pre>${formatLogError(err)}</pre>`, {
+                parse_mode: "HTML",
+                reply_to_message_id,
+            });
+        } catch (inner) {
+            await sendLog(`<b>onMessageText (ichki)</b>\n<pre>${formatLogError(inner)}</pre>`, {
+                parse_mode: "HTML",
+            });
+            await sendLog(`<b>onMessageText (asl xato)</b>\n<pre>${formatLogError(err)}</pre>`, {
+                parse_mode: "HTML",
+            });
         }
     }
 };

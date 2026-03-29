@@ -1,10 +1,10 @@
 import { Context } from "grammy";
 import { eq } from "drizzle-orm";
 
-import { bot } from "@/bot";
 import { db, isg, isu } from "@/db";
-import { ADMIN_CHAT_ID } from "@/utils/constants";
 import type { Group, GroupStatus, User } from "@/utils/types";
+import { notifyAdmin } from "@/services/admin-chat";
+import { formatLogError, sendLog } from "@/services/log";
 
 
 export function userLink(user: User): string {
@@ -37,7 +37,6 @@ export async function saveUser(ctx: Context, prop?: { utm?: string, today_count?
         }
 
         // to-do: referred_by qo'shish
-        // to-do: today_count va total_count qo'shish
         // to-do: status qo'shish
 
         const tgIdKey = String(userData.tg_id);
@@ -49,7 +48,7 @@ export async function saveUser(ctx: Context, prop?: { utm?: string, today_count?
             const msg =
                 `🆕 Yangi foydalanuvchi:\n\n👤 Ism: ${userlink}\n🔗 Username: ${username}\n` +
                 `🆔 ID: <code>${user.id}</code>\n🚪 Qayerdan kelgan: ${utm}\n🤖 Bot: @insta_yuklagich_bot`;
-            await bot.api.sendMessage(ADMIN_CHAT_ID, msg, { parse_mode: "HTML" });
+            await notifyAdmin(msg);
         }
 
         try {
@@ -82,11 +81,11 @@ export async function saveUser(ctx: Context, prop?: { utm?: string, today_count?
                 }),
             );
         } catch (err) {
-            console.error("PostgreSQL/Drizzle ga saqlashda xato:", err);
+            await sendLog(`<b>saveUser (DB)</b>\n<pre>${formatLogError(err)}</pre>`, { parse_mode: "HTML" });
             return [];
         }
     } catch (err) {
-        console.error(err);
+        await sendLog(`<b>saveUser</b>\n<pre>${formatLogError(err)}</pre>`, { parse_mode: "HTML" });
 
         return []
     }
@@ -127,7 +126,7 @@ export async function saveGroup(
             const msg =
                 `🆕 Yangi guruh:\n\n👥 Chat: ${chatlink}\n🔗 Username: ${username}\n${addedBy}` +
                 `🆔 ID: <code>${chat.id}</code>\n🤖 Bot: @insta_yuklagich_bot`;
-            await bot.api.sendMessage(ADMIN_CHAT_ID, msg, { parse_mode: "HTML" });
+            await notifyAdmin(msg);
         }
 
         try {
@@ -170,12 +169,11 @@ export async function saveGroup(
                 }),
             );
         } catch (err) {
-            console.error("PostgreSQL/Drizzle ga guruhni saqlashda xato:", err);
+            await sendLog(`<b>saveGroup (DB)</b>\n<pre>${formatLogError(err)}</pre>`, { parse_mode: "HTML" });
             return [];
         }
     } catch (err) {
-        console.error(err);
+        await sendLog(`<b>saveGroup</b>\n<pre>${formatLogError(err)}</pre>`, { parse_mode: "HTML" });
         return [];
     }
 }
-
