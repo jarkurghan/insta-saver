@@ -4,6 +4,7 @@ import { InputFile } from "grammy";
 import { type Filter } from "grammy";
 import { LOG_CHANNEL_ID } from "@/utils/constants";
 import axios from "axios";
+import { counter } from "@/services/counter";
 
 async function getVideo(messageURL: string) {
     const urlObj = new URL(messageURL);
@@ -46,11 +47,13 @@ export const onMessageText = async (ctx: Filter<Context, "message:text">) => {
         const caption = "✅ @insta_yuklagich_bot orqali yuklab olindi";
         if (ctx.chat.type === "private") {
             await ctx.replyWithVideo(new InputFile(data, "video.mp4"), { caption });
+            await counter(ctx);
         } else {
             await ctx.replyWithVideo(new InputFile(data, "video.mp4"), {
                 caption,
                 reply_parameters: { message_id: ctx.message.message_id },
             });
+            await counter(ctx);
         }
     } catch (err) {
         console.error(err);

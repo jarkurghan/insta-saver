@@ -2,9 +2,9 @@ import { Context } from "grammy";
 import { eq } from "drizzle-orm";
 
 import { bot } from "@/bot";
-import { db, isu } from "@/db";
+import { db, isg, isu } from "@/db";
 import { ADMIN_CHAT_ID } from "@/utils/constants";
-import type { User } from "@/utils/types";
+import type { Group, GroupStatus, User } from "@/utils/types";
 
 
 export function userLink(user: User): string {
@@ -12,7 +12,12 @@ export function userLink(user: User): string {
     return user.username ? `<a href="tg://resolve?domain=${user.username}">${fullName}</a>` : `<a href="tg://user?id=${user.tg_id}">${fullName}</a>`;
 }
 
-export async function saveUser(ctx: Context, prop?: { utm?: string }): Promise<User[]> {
+export function groupLink(chat: { id: number; title?: string; username?: string | null }): string {
+    const name = chat.title || "Noma'lum";
+    return chat.username ? `<a href="https://t.me/${chat.username}">${name}</a>` : name;
+}
+
+export async function saveUser(ctx: Context, prop?: { utm?: string, today_count?: number, total_count?: number }): Promise<User[]> {
     try {
         const user = ctx.from;
         if (!user) return [];
@@ -23,6 +28,13 @@ export async function saveUser(ctx: Context, prop?: { utm?: string }): Promise<U
             last_name: user.last_name || null,
             username: user.username || null,
         };
+
+        if (prop?.today_count) {
+            userData.today_count = prop.today_count;
+        }
+        if (prop?.total_count) {
+            userData.total_count = prop.total_count;
+        }
 
         // to-do: referred_by qo'shish
         // to-do: today_count va total_count qo'shish
@@ -77,6 +89,93 @@ export async function saveUser(ctx: Context, prop?: { utm?: string }): Promise<U
         console.error(err);
 
         return []
+    }
+}
+
+export async function saveGroup(
+    ctx: Context,
+    prop?: { today_count?: number; total_count?: number; status?: GroupStatus },
+): Promise<Group[]> {
+    try {
+        const chat = ctx.chat;
+        if (!chat || (chat.type !== "group" && chat.type !== "supergroup")) return [];
+
+        const from = ctx.from;
+        const chatIdKey = String(chat.id);
+
+        const groupStatus: GroupStatus = prop?.status ?? "active";
+
+        const groupData: Group = {
+            chat_id: chatIdKey,
+            chat_name: chat.title ?? null,
+            chat_username: chat.username ?? null,
+            status: groupStatus,
+        };
+
+        const existing = await db.select({ chat_id: isg.chat_id }).from(isg).where(eq(isg.chat_id, chatIdKey)).limit(1);
+        if (existing.length === 0) {
+            const chatlink = groupLink(chat);
+            const username = chat.username ? `@${chat.username}` : "Noma'lum";
+            const addedBy = from
+                ? `👤 Qo'shgan: ${userLink({
+                      tg_id: from.id,
+                      first_name: from.first_name,
+                      last_name: from.last_name ?? null,
+                      username: from.username ?? null,
+                  })}\n`
+                : "";
+            const msg =
+                `🆕 Yangi guruh:\n\n👥 Chat: ${chatlink}\n🔗 Username: ${username}\n${addedBy}` +
+                `🆔 ID: <code>${chat.id}</code>\n🤖 Bot: @insta_yuklagich_bot`;
+            await bot.api.sendMessage(ADMIN_CHAT_ID, msg, { parse_mode: "HTML" });
+        }
+
+        try {
+            const rows = await db
+                .insert(isg)
+                .values({
+                    chat_id: chatIdKey,
+                    chat_name: groupData.chat_name,
+                    chat_username: groupData.chat_username,
+                    added_by_username: from?.username ?? null,
+                    added_by_tg_id: from ? String(from.id) : null,
+                    added_by_full_name: from
+                        ? `${from.first_name || ""} ${from.last_name || ""}`.trim() || null
+                        : null,
+                    today_count: prop?.today_count ?? 0,
+                    total_count: prop?.total_count ?? 0,
+                    status: groupStatus,
+                })
+                .onConflictDoUpdate({
+                    target: [isg.chat_id],
+                    set: {
+                        chat_name: groupData.chat_name,
+                        chat_username: groupData.chat_username,
+                        status: groupStatus,
+                        updated_at: new Date(),
+                    },
+                })
+                .returning();
+
+            return rows.map(
+                (row): Group => ({
+                    id: row.id,
+                    chat_id: row.chat_id ?? chatIdKey,
+                    chat_name: row.chat_name,
+                    chat_username: row.chat_username,
+                    added_by_username: row.added_by_username,
+                    added_by_tg_id: row.added_by_tg_id,
+                    added_by_full_name: row.added_by_full_name,
+                    status: row.status as GroupStatus,
+                }),
+            );
+        } catch (err) {
+            console.error("PostgreSQL/Drizzle ga guruhni saqlashda xato:", err);
+            return [];
+        }
+    } catch (err) {
+        console.error(err);
+        return [];
     }
 }
 

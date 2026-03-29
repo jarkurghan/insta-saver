@@ -34,6 +34,9 @@ export const isg = pgTable(
         added_by_full_name: text("added_by_full_name"),
         today_count: integer("today_count").default(0).notNull(),
         total_count: integer("total_count").default(0).notNull(),
+        status: text("status", { enum: ["active", "left", "kicked", "other"] })
+            .default("active")
+            .notNull(),
         created_at: timestamp("created_at").defaultNow().notNull(),
         updated_at: timestamp("updated_at")
             .defaultNow()

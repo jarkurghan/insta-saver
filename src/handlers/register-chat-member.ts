@@ -1,9 +1,27 @@
 import { Context, type Filter } from "grammy";
-import { ADMIN_CHAT_ID } from "@/utils/constants";
-import { saveUser, userLink } from "@/services/save-user";
-import type { User } from "@/utils/types";
+import type { ChatMember } from "@grammyjs/types";
+import { eq } from "drizzle-orm";
+
+import { db, isg } from "@/db";
+import { saveGroup, saveUser, userLink } from "@/services/save-user";
 import { sendLog } from "@/services/log";
-import { bot } from "@/bot";
+import type { GroupStatus, User } from "@/utils/types";
+
+function groupStatusFromChatMember(member: ChatMember): GroupStatus {
+    switch (member.status) {
+        case "member":
+        case "administrator":
+        case "restricted":
+        case "creator":
+            return "active";
+        case "left":
+            return "left";
+        case "kicked":
+            return "kicked";
+        default:
+            return "other";
+    }
+}
 
 export async function registerChatMember(ctx: Filter<Context, "my_chat_member">) {
     if (ctx.chat.type === "group" || ctx.chat.type === "supergroup") {
@@ -15,13 +33,18 @@ export async function registerChatMember(ctx: Filter<Context, "my_chat_member">)
 
 export async function addToGroup(ctx: Filter<Context, "my_chat_member">) {
     try {
+        const mapped = groupStatusFromChatMember(ctx.myChatMember.new_chat_member);
+        const chatIdKey = String(ctx.chat.id);
+
+        if (mapped === "left" || mapped === "kicked") {
+            await db.update(isg).set({ status: mapped, updated_at: new Date() }).where(eq(isg.chat_id, chatIdKey));
+            return;
+        }
+
+        await saveGroup(ctx, { status: mapped });
+
         const replyText = "Guruhga qo'shilganimdan xursandman! Men **instagram video havolasini** yuborilsa darxol o'sha videoni tashlab beraman";
         await ctx.reply(replyText, { parse_mode: "Markdown" });
-
-        const username = `${ctx.chat.username ? `🔗 Username: @${ctx.chat.username}\n` : ""}`;
-        const message = `🆕 Guruhga qo'shilish:\n\n` + `👥 Chat: ${ctx.chat.title}\n${username}🆔 ID: ${ctx.chat.id}\n` + `🤖 Bot: @insta_yuklagich_bot`;
-
-        await bot.api.sendMessage(ADMIN_CHAT_ID, message);
     } catch (err) {
         console.error(err);
     }
