@@ -1,11 +1,8 @@
 import { Context } from "grammy";
-import { eq } from "drizzle-orm";
-
 import { db, isg, isu } from "@/db";
+import { eq } from "drizzle-orm/sql/expressions/conditions";
 import type { Group, GroupStatus, User } from "@/utils/types";
-import { notifyAdmin } from "@/services/admin-chat";
-import { formatLogError, sendLog } from "@/services/log";
-
+import { sendAdmin, sendErrorLog } from "@/services/log";
 
 export function userLink(user: User): string {
     const fullName = `${user.first_name || "Noma'lum"} ${user.last_name || ""}`;
@@ -17,7 +14,7 @@ export function groupLink(chat: { id: number; title?: string; username?: string 
     return chat.username ? `<a href="https://t.me/${chat.username}">${name}</a>` : name;
 }
 
-export async function saveUser(ctx: Context, prop?: { utm?: string, today_count?: number, total_count?: number }): Promise<User[]> {
+export async function saveUser(ctx: Context, prop?: { utm?: string; today_count?: number; total_count?: number }): Promise<User[]> {
     try {
         const user = ctx.from;
         if (!user) return [];
@@ -37,37 +34,26 @@ export async function saveUser(ctx: Context, prop?: { utm?: string, today_count?
         }
 
         // to-do: referred_by qo'shish
-        // to-do: status qo'shish
 
         const tgIdKey = String(userData.tg_id);
-        const existing = await db.select({ tg_id: isu.tg_id }).from(isu).where(eq(isu.tg_id, tgIdKey)).limit(1);
-        if (existing.length === 0) {
+        const [existing] = await db.select({ tg_id: isu.tg_id }).from(isu).where(eq(isu.tg_id, tgIdKey)).limit(1);
+        if (!existing) {
             const utm = prop?.utm || "-";
             const username = user.username ? `@${user.username}` : "Noma'lum";
             const userlink = userLink(userData);
             const msg =
                 `🆕 Yangi foydalanuvchi:\n\n👤 Ism: ${userlink}\n🔗 Username: ${username}\n` +
                 `🆔 ID: <code>${user.id}</code>\n🚪 Qayerdan kelgan: ${utm}\n🤖 Bot: @insta_yuklagich_bot`;
-            await notifyAdmin(msg);
+            await sendAdmin(msg);
         }
 
         try {
             const rows = await db
                 .insert(isu)
-                .values({
-                    tg_id: tgIdKey,
-                    first_name: userData.first_name,
-                    last_name: userData.last_name,
-                    username: userData.username,
-                })
+                .values({ tg_id: tgIdKey, first_name: userData.first_name, last_name: userData.last_name, username: userData.username })
                 .onConflictDoUpdate({
                     target: [isu.tg_id],
-                    set: {
-                        first_name: userData.first_name,
-                        last_name: userData.last_name,
-                        username: userData.username,
-                        updated_at: new Date(),
-                    },
+                    set: { first_name: userData.first_name, last_name: userData.last_name, username: userData.username, updated_at: new Date() },
                 })
                 .returning();
 
@@ -81,20 +67,16 @@ export async function saveUser(ctx: Context, prop?: { utm?: string, today_count?
                 }),
             );
         } catch (err) {
-            await sendLog(`<b>saveUser (DB)</b>\n<pre>${formatLogError(err)}</pre>`, { parse_mode: "HTML" });
+            await sendErrorLog({ ctx, event: "saveUser (DB)", error: err });
             return [];
         }
     } catch (err) {
-        await sendLog(`<b>saveUser</b>\n<pre>${formatLogError(err)}</pre>`, { parse_mode: "HTML" });
-
-        return []
+        await sendErrorLog({ ctx, event: "saveUser", error: err });
+        return [];
     }
 }
 
-export async function saveGroup(
-    ctx: Context,
-    prop?: { today_count?: number; total_count?: number; status?: GroupStatus },
-): Promise<Group[]> {
+export async function saveGroup(ctx: Context, prop?: { today_count?: number; total_count?: number; status?: GroupStatus }): Promise<Group[]> {
     try {
         const chat = ctx.chat;
         if (!chat || (chat.type !== "group" && chat.type !== "supergroup")) return [];
@@ -104,15 +86,9 @@ export async function saveGroup(
 
         const groupStatus: GroupStatus = prop?.status ?? "active";
 
-        const groupData: Group = {
-            chat_id: chatIdKey,
-            chat_name: chat.title ?? null,
-            chat_username: chat.username ?? null,
-            status: groupStatus,
-        };
-
-        const existing = await db.select({ chat_id: isg.chat_id }).from(isg).where(eq(isg.chat_id, chatIdKey)).limit(1);
-        if (existing.length === 0) {
+        const groupData: Group = { chat_id: chatIdKey, chat_name: chat.title ?? null, chat_username: chat.username ?? null, status: groupStatus };
+        const [existing] = await db.select({ chat_id: isg.chat_id }).from(isg).where(eq(isg.chat_id, chatIdKey)).limit(1);
+        if (!existing) {
             const chatlink = groupLink(chat);
             const username = chat.username ? `@${chat.username}` : "Noma'lum";
             const addedBy = from
@@ -126,7 +102,7 @@ export async function saveGroup(
             const msg =
                 `🆕 Yangi guruh:\n\n👥 Chat: ${chatlink}\n🔗 Username: ${username}\n${addedBy}` +
                 `🆔 ID: <code>${chat.id}</code>\n🤖 Bot: @insta_yuklagich_bot`;
-            await notifyAdmin(msg);
+            await sendAdmin(msg);
         }
 
         try {
@@ -138,9 +114,7 @@ export async function saveGroup(
                     chat_username: groupData.chat_username,
                     added_by_username: from?.username ?? null,
                     added_by_tg_id: from ? String(from.id) : null,
-                    added_by_full_name: from
-                        ? `${from.first_name || ""} ${from.last_name || ""}`.trim() || null
-                        : null,
+                    added_by_full_name: from ? `${from.first_name || ""} ${from.last_name || ""}`.trim() || null : null,
                     today_count: prop?.today_count ?? 0,
                     total_count: prop?.total_count ?? 0,
                     status: groupStatus,
@@ -169,11 +143,11 @@ export async function saveGroup(
                 }),
             );
         } catch (err) {
-            await sendLog(`<b>saveGroup (DB)</b>\n<pre>${formatLogError(err)}</pre>`, { parse_mode: "HTML" });
+            await sendErrorLog({ ctx, event: "saveGroup (DB)", error: err });
             return [];
         }
     } catch (err) {
-        await sendLog(`<b>saveGroup</b>\n<pre>${formatLogError(err)}</pre>`, { parse_mode: "HTML" });
+        await sendErrorLog({ ctx, event: "saveGroup", error: err });
         return [];
     }
 }

@@ -11,9 +11,12 @@ export interface User {
     username: string | null;
     today_count?: number;
     total_count?: number;
+    status?: UserStatus;
 }
 
-/** Guruh: bot hali guruhda (active), chiqib ketgan (left), chiqarilgan (kicked), boshqa (other) */
+export const USER_STATUSES = ["active", "deleted_account", "has_blocked", "other"] as const;
+export type UserStatus = (typeof USER_STATUSES)[number];
+
 export const GROUP_STATUSES = ["active", "left", "kicked", "other"] as const;
 export type GroupStatus = (typeof GROUP_STATUSES)[number];
 
@@ -31,3 +34,4 @@ export interface Group {
 }
 
 export type LogOptions = { parse_mode?: ParseMode; reply_to_message_id?: number };
+export type ErrorLogOptions = { ctx?: Context; event: string; error: unknown; reply_to_message_id?: number; parse_mode?: ParseMode };

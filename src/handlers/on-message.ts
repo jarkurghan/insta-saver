@@ -2,9 +2,9 @@ import { Context } from "grammy";
 import { InputFile } from "grammy";
 import { type Filter } from "grammy";
 import { LOG_CHANNEL_ID } from "@/utils/constants";
-import axios from "axios";
+import { sendErrorLog } from "@/services/log";
 import { counter } from "@/services/counter";
-import { formatLogError, sendLog } from "@/services/log";
+import axios from "axios";
 
 async function getVideo(messageURL: string) {
     const urlObj = new URL(messageURL);
@@ -41,6 +41,8 @@ export const onMessageText = async (ctx: Filter<Context, "message:text">) => {
             } else return;
         }
 
+        // to-do: photo and list support
+
         await ctx.replyWithChatAction("upload_video");
         const data = await getVideo(messageURL);
 
@@ -57,25 +59,18 @@ export const onMessageText = async (ctx: Filter<Context, "message:text">) => {
         }
     } catch (err) {
         try {
-            if (ctx.chat.type === "private") {
-                await ctx.reply(
-                    "Xatolik yuz berdi. Linkni tekshirib ko‘ring ⚠️ (Ehtimol, post shaxsiy/private bo'lishi mumkin)",
-                );
-            }
-
             const forwardedLog = await ctx.forwardMessage(LOG_CHANNEL_ID);
             const reply_to_message_id = forwardedLog.message_id;
-            await sendLog(`<b>onMessageText</b>\n<pre>${formatLogError(err)}</pre>`, {
-                parse_mode: "HTML",
-                reply_to_message_id,
-            });
+
+            await sendErrorLog({ ctx, event: "Xabar kelganda", error: err, reply_to_message_id });
+
+            if (ctx.chat.type === "private") {
+                await ctx
+                    .reply("Xatolik yuz berdi. Linkni tekshirib ko‘ring ⚠️ (Ehtimol, post shaxsiy/private bo'lishi mumkin)")
+                    .catch(async (error) => await sendErrorLog({ ctx, event: "Javob yuborishda", error, reply_to_message_id }));
+            }
         } catch (inner) {
-            await sendLog(`<b>onMessageText (ichki)</b>\n<pre>${formatLogError(inner)}</pre>`, {
-                parse_mode: "HTML",
-            });
-            await sendLog(`<b>onMessageText (asl xato)</b>\n<pre>${formatLogError(err)}</pre>`, {
-                parse_mode: "HTML",
-            });
+            console.log("System error:", inner);
         }
     }
 };

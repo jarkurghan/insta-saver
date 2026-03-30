@@ -4,9 +4,8 @@ import type { GroupStatus, User } from "@/utils/types";
 import { saveGroup } from "@/services/save-user";
 import { saveUser } from "@/services/save-user";
 import { groupLink, userLink } from "@/services/save-user";
-import { notifyAdmin } from "@/services/admin-chat";
-import { formatLogError, sendLog } from "@/services/log";
-import { eq } from "drizzle-orm";
+import { sendAdmin, sendErrorLog } from "@/services/log";
+import { eq } from "drizzle-orm/sql/expressions/conditions";
 import { isg, isu } from "@/db";
 import { db } from "@/db";
 
@@ -34,9 +33,7 @@ export async function registerChatMember(ctx: Filter<Context, "my_chat_member">)
             await onHasBlocked(ctx);
         }
     } catch (err) {
-        await sendLog(`<b>registerChatMember</b>\n<pre>${formatLogError(err)}</pre>`, {
-            parse_mode: "HTML",
-        });
+        await sendErrorLog({ ctx, event: "Chat member", error: err });
     }
 }
 
@@ -51,9 +48,15 @@ export async function addToGroup(ctx: Filter<Context, "my_chat_member">) {
             await db.update(isg).set({ status: mapped, updated_at: new Date() }).where(eq(isg.chat_id, chatIdKey));
             if (beforeRow && beforeRow.status !== mapped) {
                 const gl = groupLink({ id: chat.id, title: chat.title, username: chat.username ?? null });
-                await notifyAdmin(
-                    `📛 <b>Guruh statusi o'zgardi</b>\n<code>${beforeRow.status}</code> → <b>${mapped}</b>\n\n👥 ${gl}\n🆔 <code>${chat.id}</code>`,
-                );
+                const msg =
+                    `♻️ Status o'zgartirildi:\n\n` +
+                    `👥 Chat: ${gl}\n` +
+                    `🆔 Chat ID: <code>${chat.id}</code>\n` +
+                    `🔦 Eski status: ${beforeRow?.status ?? "—"}\n` +
+                    `🔦 Yangi status: has_blocked\n` +
+                    `🤖 Bot: @insta_yuklagich_bot`;
+
+                await sendAdmin(msg);
             }
             return;
         }
@@ -63,18 +66,21 @@ export async function addToGroup(ctx: Filter<Context, "my_chat_member">) {
 
         if (beforeRow && beforeRow.status !== mapped) {
             const gl = groupLink({ id: chat.id, title: chat.title, username: chat.username ?? null });
-            await notifyAdmin(
-                `📛 <b>Guruh statusi o'zgardi</b>\n<code>${beforeRow.status}</code> → <b>${mapped}</b>\n\n👥 ${gl}\n🆔 <code>${chat.id}</code>`,
-            );
+            const msg =
+                `♻️ Status o'zgartirildi:\n\n` +
+                `👥 Chat: ${gl}\n` +
+                `🆔 Chat ID: <code>${chat.id}</code>\n` +
+                `🔦 Eski status: ${beforeRow?.status ?? "—"}\n` +
+                `🔦 Yangi status: ${mapped}\n` +
+                `🤖 Bot: @insta_yuklagich_bot`;
+
+            await sendAdmin(msg);
         }
 
-        const replyText =
-            "Guruhga qo'shilganimdan xursandman! Men **instagram video havolasini** yuborilsa darxol o'sha videoni tashlab beraman";
+        const replyText = "Guruhga qo'shilganimdan xursandman! Men **instagram video havolasini** yuborilsa darxol o'sha videoni tashlab beraman";
         await ctx.reply(replyText, { parse_mode: "Markdown" });
     } catch (err) {
-        await sendLog(`<b>addToGroup</b>\n<pre>${formatLogError(err)}</pre>`, {
-            parse_mode: "HTML",
-        });
+        await sendErrorLog({ ctx, event: "Guruhga qo'shilganda", error: err });
     }
 }
 
@@ -98,23 +104,33 @@ export async function onHasBlocked(ctx: Filter<Context, "my_chat_member">) {
         if (ctx.myChatMember.new_chat_member.status === "kicked") {
             await db.update(isu).set({ status: "has_blocked", updated_at: new Date() }).where(eq(isu.tg_id, tgKey));
             if (!beforeRow || beforeRow.status !== "has_blocked") {
-                await notifyAdmin(
-                    `📛 <b>Foydalanuvchi statusi o'zgardi</b>\n<code>${beforeRow?.status ?? "—"}</code> → <b>has_blocked</b>\n\n👤 ${userLink(userData)}\n🆔 <code>${userData.tg_id}</code>`,
-                );
+                const msg =
+                    `♻️ Status o'zgartirildi:\n\n` +
+                    `👤 Ism: ${userLink(userData)}\n` +
+                    `🆔 User ID: <code>${tgKey}</code>\n` +
+                    `🔦 Eski status: ${beforeRow?.status ?? "—"}\n` +
+                    `🔦 Yangi status: has_blocked\n` +
+                    `🤖 Bot: @insta_yuklagich_bot`;
+
+                await sendAdmin(msg);
             }
         } else if (ctx.myChatMember.new_chat_member.status === "member") {
             await db.update(isu).set({ status: "active", updated_at: new Date() }).where(eq(isu.tg_id, tgKey));
             if (!beforeRow || beforeRow.status !== "active") {
-                await notifyAdmin(
-                    `✅ <b>Foydalanuvchi statusi o'zgardi</b>\n<code>${beforeRow?.status ?? "—"}</code> → <b>active</b>\n\n👤 ${userLink(userData)}\n🆔 <code>${userData.tg_id}</code>`,
-                );
+                const msg =
+                    `♻️ Status o'zgartirildi:\n\n` +
+                    `👤 Ism: ${userLink(userData)}\n` +
+                    `🆔 User ID: <code>${tgKey}</code>\n` +
+                    `🔦 Eski status: ${beforeRow?.status ?? "—"}\n` +
+                    `🔦 Yangi status: active\n` +
+                    `🤖 Bot: @insta_yuklagich_bot`;
+
+                await sendAdmin(msg);
             }
         } else {
-            console.log(ctx.myChatMember.new_chat_member);
+            await sendErrorLog({ ctx, event: "Foydalanuvchi statusi o'zgarmadi", error: new Error("Foydalanuvchi statusi o'zgarmadi") });
         }
     } catch (err) {
-        await sendLog(`<b>onHasBlocked</b>\n<pre>${formatLogError(err)}</pre>`, {
-            parse_mode: "HTML",
-        });
+        await sendErrorLog({ ctx, event: "Foydalanuvchi bloklanganda", error: err });
     }
 }

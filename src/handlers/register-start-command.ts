@@ -1,7 +1,7 @@
 import type { CommandContext } from "grammy";
 import { saveUser } from "@/services/save-user";
+import { sendErrorLog } from "@/services/log";
 import { Context } from "grammy";
-import { formatLogError, sendLog } from "@/services/log";
 
 export async function registerStartCommand(ctx: CommandContext<Context>) {
     try {
@@ -13,8 +13,6 @@ export async function registerStartCommand(ctx: CommandContext<Context>) {
         const message = "Salom! Menga instagram video havolasini yuboring";
         await ctx.reply(message);
     } catch (err) {
-        await sendLog(`<b>registerStartCommand</b>\n<pre>${formatLogError(err)}</pre>`, {
-            parse_mode: "HTML",
-        });
+        await sendErrorLog({ ctx, event: "start bosganda", error: err });
     }
 }

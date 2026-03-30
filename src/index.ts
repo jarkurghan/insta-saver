@@ -10,17 +10,5 @@
 
 import "@/db";
 import { startBot } from "@/bot";
-import { formatLogError, sendLog } from "@/services/log";
 
-async function run() {
-    try {
-        await startBot();
-    } catch (err) {
-        await sendLog(`<b>Bot ishga tushirishda xato</b>\n<pre>${formatLogError(err)}</pre>`, {
-            parse_mode: "HTML",
-        });
-        process.exit(1);
-    }
-}
-
-void run();
+startBot();
