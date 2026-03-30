@@ -18,8 +18,8 @@ bot.on("my_chat_member", registerChatMember);
 
 bot.catch(registerErrorHandler);
 
-// export const handleUpdate = webhookCallback(bot, "hono");
+export const handleUpdate = webhookCallback(bot, "hono");
 
-export function startBot() {
-    return bot.start();
-}
+// export function startBot() {
+//     return bot.start();
+// }
