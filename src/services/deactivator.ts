@@ -29,7 +29,7 @@ export async function changeStatus(ctx: Context, status: UserStatus): Promise<vo
                 `♻️ Status o'zgartirildi:\n\n` +
                 `👤 Ism: ${userlink}\n` +
                 `🆔 User ID: <code>${tg_id}</code>\n` +
-                `🔦 Yangi status: ${status}\n` +
+                `♻️ Yangi status: ${status}\n` +
                 `🤖 Bot: @insta_yuklagich_bot`;
             await sendAdmin(msg);
         }

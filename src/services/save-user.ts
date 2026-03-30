@@ -48,9 +48,18 @@ export async function saveUser(ctx: Context, prop?: { utm?: string; today_count?
         }
 
         try {
+            const insertValues = {
+                tg_id: tgIdKey,
+                first_name: userData.first_name,
+                last_name: userData.last_name,
+                username: userData.username,
+                ...(userData.today_count !== undefined ? { today_count: userData.today_count } : {}),
+                ...(userData.total_count !== undefined ? { total_count: userData.total_count } : {}),
+            };
+
             const rows = await db
                 .insert(isu)
-                .values({ tg_id: tgIdKey, first_name: userData.first_name, last_name: userData.last_name, username: userData.username })
+                .values(insertValues)
                 .onConflictDoUpdate({
                     target: [isu.tg_id],
                     set: { first_name: userData.first_name, last_name: userData.last_name, username: userData.username, updated_at: new Date() },

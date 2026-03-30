@@ -52,8 +52,8 @@ export async function addToGroup(ctx: Filter<Context, "my_chat_member">) {
                     `♻️ Status o'zgartirildi:\n\n` +
                     `👥 Chat: ${gl}\n` +
                     `🆔 Chat ID: <code>${chat.id}</code>\n` +
-                    `🔦 Eski status: ${beforeRow?.status ?? "—"}\n` +
-                    `🔦 Yangi status: has_blocked\n` +
+                    `♻️ Eski status: ${beforeRow?.status ?? "—"}\n` +
+                    `♻️ Yangi status: ${mapped}\n` +
                     `🤖 Bot: @insta_yuklagich_bot`;
 
                 await sendAdmin(msg);
@@ -70,8 +70,8 @@ export async function addToGroup(ctx: Filter<Context, "my_chat_member">) {
                 `♻️ Status o'zgartirildi:\n\n` +
                 `👥 Chat: ${gl}\n` +
                 `🆔 Chat ID: <code>${chat.id}</code>\n` +
-                `🔦 Eski status: ${beforeRow?.status ?? "—"}\n` +
-                `🔦 Yangi status: ${mapped}\n` +
+                `♻️ Eski status: ${beforeRow?.status ?? "—"}\n` +
+                `♻️ Yangi status: ${mapped}\n` +
                 `🤖 Bot: @insta_yuklagich_bot`;
 
             await sendAdmin(msg);
@@ -108,8 +108,8 @@ export async function onHasBlocked(ctx: Filter<Context, "my_chat_member">) {
                     `♻️ Status o'zgartirildi:\n\n` +
                     `👤 Ism: ${userLink(userData)}\n` +
                     `🆔 User ID: <code>${tgKey}</code>\n` +
-                    `🔦 Eski status: ${beforeRow?.status ?? "—"}\n` +
-                    `🔦 Yangi status: has_blocked\n` +
+                    `♻️ Eski status: ${beforeRow?.status ?? "—"}\n` +
+                    `♻️ Yangi status: has_blocked\n` +
                     `🤖 Bot: @insta_yuklagich_bot`;
 
                 await sendAdmin(msg);
@@ -121,8 +121,8 @@ export async function onHasBlocked(ctx: Filter<Context, "my_chat_member">) {
                     `♻️ Status o'zgartirildi:\n\n` +
                     `👤 Ism: ${userLink(userData)}\n` +
                     `🆔 User ID: <code>${tgKey}</code>\n` +
-                    `🔦 Eski status: ${beforeRow?.status ?? "—"}\n` +
-                    `🔦 Yangi status: active\n` +
+                    `♻️ Eski status: ${beforeRow?.status ?? "—"}\n` +
+                    `♻️ Yangi status: active\n` +
                     `🤖 Bot: @insta_yuklagich_bot`;
 
                 await sendAdmin(msg);
