@@ -5,8 +5,12 @@ import { logger } from "hono/logger";
 const app = new Hono();
 
 app.use("*", logger());
-app.post("/bot", async (c) => await handleUpdate(c));
+
 app.get("/", (c) => c.text("Hello Hono!"));
+app.post("/bot", (c) => {
+    void handleUpdate(c).catch((err) => console.error("System error: ", err));
+    return c.text("OK");
+});
 
 export default app;
 

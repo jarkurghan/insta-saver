@@ -6,10 +6,12 @@ import { sendErrorLog } from "@/services/log";
 import { eq } from "drizzle-orm/sql/expressions/conditions";
 import type { GroupStatus, UserStatus } from "@/utils/types";
 
-export const counter = async (ctx: Context) => {
+export const counter = async (ctx: Context, step?: number) => {
     try {
         const chat = ctx.chat;
         if (!chat) return;
+
+        const c = step || 1;
 
         if (chat.type === "private") {
             const tg_id = ctx.from?.id;
@@ -21,13 +23,13 @@ export const counter = async (ctx: Context) => {
             if (user) {
                 let { total_count, today_count } = user;
 
-                today_count++;
-                total_count++;
+                today_count += c;
+                total_count += c;
 
                 const userData = { today_count, total_count, status: "active" as UserStatus };
                 await db.update(isu).set(userData).where(whereCondition);
             } else {
-                await saveUser(ctx, { today_count: 1, total_count: 1 });
+                await saveUser(ctx, { today_count: c, total_count: c });
             }
         } else if (chat.type === "group" || chat.type === "supergroup") {
             const chatId = String(chat.id);
@@ -37,13 +39,13 @@ export const counter = async (ctx: Context) => {
             if (group) {
                 let { total_count, today_count } = group;
 
-                today_count++;
-                total_count++;
+                today_count += c;
+                total_count += c;
 
                 const groupData = { today_count, total_count, status: "active" as GroupStatus };
                 await db.update(isg).set(groupData).where(whereCondition);
             } else if (!group) {
-                await saveGroup(ctx, { today_count: 1, total_count: 1 });
+                await saveGroup(ctx, { today_count: c, total_count: c });
             }
         }
     } catch (err) {
