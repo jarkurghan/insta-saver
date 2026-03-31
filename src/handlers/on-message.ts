@@ -6,15 +6,39 @@ import { sendErrorLog } from "@/services/log";
 import { counter } from "@/services/counter";
 import axios from "axios";
 
-async function getVideo(messageURL: string) {
+type MediaType = "photo" | "video";
+
+interface MediaFile {
+    data: Buffer;
+    filename: string;
+    type: MediaType;
+}
+
+async function getMediaFiles(messageURL: string): Promise<MediaFile[]> {
     const urlObj = new URL(messageURL);
     urlObj.hostname = "kkinstagram.com";
     urlObj.searchParams.set("utm_source", "ig_web_copy_link");
 
     const url = urlObj.toString().replaceAll("%3D", "=");
     const headers = { "User-Agent": "TelegramBot (like TwitterBot)" };
-    const { data } = await axios({ url, headers, method: "GET", responseType: "arraybuffer" });
-    return data;
+
+    const response = await axios<{ data: Buffer }>({ url, headers, method: "GET", responseType: "arraybuffer" });
+
+    const contentType = String(response.headers["content-type"] || "");
+
+    let type: MediaType = "video";
+    if (contentType.startsWith("image/")) {
+        type = "photo";
+    } else if (contentType.startsWith("video/")) {
+        type = "video";
+    }
+
+    const extensionFromHeader = contentType.split("/")[1]?.split(";")[0] || "";
+    const extension = extensionFromHeader || (type === "photo" ? "jpg" : "mp4");
+
+    const filename = `${type}.${extension}`;
+
+    return [{ data: response.data as unknown as Buffer, filename, type }];
 }
 
 function extractInstagramUrls(text: string): string[] {
@@ -29,11 +53,11 @@ export const onMessageText = async (ctx: Filter<Context, "message:text">) => {
         if (ctx.message.sender_chat?.type === "channel") return;
         if (ctx.chat.id === Number(LOG_CHANNEL_ID)) return;
 
-        const messageURL = extractInstagramUrls(ctx.message.text)[0];
+        const messageUrls = extractInstagramUrls(ctx.message.text);
 
-        if (!messageURL) {
+        if (!messageUrls.length) {
             if (ctx.chat.type === "private") {
-                const replyText = "Iltimos, **instagram video havolasini** yuboring ♻️";
+                const replyText = "Iltimos, **instagram post/reel havolasini** yuboring ♻️";
                 await ctx.reply(replyText, { parse_mode: "Markdown" });
 
                 await ctx.forwardMessage(LOG_CHANNEL_ID);
@@ -41,22 +65,75 @@ export const onMessageText = async (ctx: Filter<Context, "message:text">) => {
             } else return;
         }
 
-        // to-do: photo and list support
+        let keepSendingChatAction = true;
+        const chatActionLoop = (async () => {
+            const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+            while (keepSendingChatAction) {
+                await ctx.api.sendChatAction(ctx.chat.id, "upload_document").catch(() => {});
+                await delay(4000);
+            }
+        })();
 
-        await ctx.replyWithChatAction("upload_video");
-        const data = await getVideo(messageURL);
+        const allMediaFiles: MediaFile[] = [];
+
+        for (const messageURL of messageUrls) {
+            const mediaFiles = await getMediaFiles(messageURL);
+            allMediaFiles.push(...mediaFiles);
+        }
+
+        if (!allMediaFiles.length) {
+            throw new Error("Hech qanday media topilmadi");
+        }
 
         const caption = "✅ @insta_yuklagich_bot orqali yuklab olindi";
-        if (ctx.chat.type === "private") {
-            await ctx.replyWithVideo(new InputFile(data, "video.mp4"), { caption });
+
+        if (allMediaFiles.length === 1) {
+            const file = allMediaFiles[0]!;
+            const inputFile = new InputFile(file.data, file.filename);
+
+            if (ctx.chat.type === "private") {
+                if (file.type === "photo") {
+                    await ctx.replyWithPhoto(inputFile, { caption });
+                } else {
+                    await ctx.replyWithVideo(inputFile, { caption });
+                }
+            } else {
+                if (file.type === "photo") {
+                    await ctx.replyWithPhoto(inputFile, {
+                        caption,
+                        reply_parameters: { message_id: ctx.message.message_id },
+                    });
+                } else {
+                    await ctx.replyWithVideo(inputFile, {
+                        caption,
+                        reply_parameters: { message_id: ctx.message.message_id },
+                    });
+                }
+            }
+
+            keepSendingChatAction = false;
+            await chatActionLoop.catch(() => {});
             await counter(ctx);
-        } else {
-            await ctx.replyWithVideo(new InputFile(data, "video.mp4"), {
-                caption,
-                reply_parameters: { message_id: ctx.message.message_id },
-            });
-            await counter(ctx);
+            return;
         }
+
+        const mediaGroup = allMediaFiles.map((file, index) => ({
+            type: file.type,
+            media: new InputFile(file.data, file.filename),
+            ...(index === 0 ? { caption } : {}),
+        }));
+
+        if (ctx.chat.type === "private") {
+            await ctx.replyWithMediaGroup(mediaGroup as any);
+        } else {
+            await ctx.api.sendMediaGroup(ctx.chat.id, mediaGroup as any, {
+                reply_to_message_id: ctx.message.message_id,
+            });
+        }
+
+        keepSendingChatAction = false;
+        await chatActionLoop.catch(() => {});
+        await counter(ctx, allMediaFiles.length);
     } catch (err) {
         try {
             const forwardedLog = await ctx.forwardMessage(LOG_CHANNEL_ID);

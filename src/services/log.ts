@@ -43,11 +43,11 @@ export const sendErrorLog = async (options: ErrorLogOptions): Promise<void> => {
 
         let logMessage = "";
         if (error instanceof Error) {
-            logMessage = error.stack || error.message;
+            logMessage = escapeForTelegramHtml(error.stack || error.message);
         } else if (error instanceof GrammyError) {
-            logMessage = error.description || error.message;
+            logMessage = escapeForTelegramHtml(error.description || error.message);
         } else {
-            logMessage = String(error);
+            logMessage = escapeForTelegramHtml(String(error));
         }
 
         const lines: string[] = [`💣 <b>Xatolik:</b>\n`, `📍 Qayerda: ${event}`, `🔦 Tafsilot: ${logMessage}`];
