@@ -7,10 +7,7 @@ const app = new Hono();
 app.use("*", logger());
 
 app.get("/", (c) => c.text("Hello Hono!"));
-app.post("/bot", (c) => {
-    void handleUpdate(c).catch((err) => console.error("System error: ", err));
-    return c.text("OK");
-});
+app.post("/bot", handleUpdate);
 
 export default app;
 
