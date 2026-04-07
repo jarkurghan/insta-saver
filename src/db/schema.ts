@@ -1,4 +1,4 @@
-import { integer, pgTable, text, varchar, uniqueIndex, timestamp } from "drizzle-orm/pg-core";
+import { integer, pgTable, text, varchar, uniqueIndex, timestamp, boolean } from "drizzle-orm/pg-core";
 
 export const isu = pgTable(
     "insta_saver_users",
@@ -32,6 +32,8 @@ export const isg = pgTable(
         added_by_username: text("added_by_username"),
         added_by_tg_id: varchar("added_by_tg_id", { length: 255 }),
         added_by_full_name: text("added_by_full_name"),
+        is_global: boolean("is_global").default(true).notNull(),
+        global_name: text("global_name").default("private group").notNull(),
         today_count: integer("today_count").default(0).notNull(),
         total_count: integer("total_count").default(0).notNull(),
         status: text("status", { enum: ["active", "left", "kicked", "other"] })

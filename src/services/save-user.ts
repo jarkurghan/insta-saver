@@ -38,8 +38,8 @@ export async function saveUser(ctx: Context, prop?: { utm?: string; today_count?
         const tgIdKey = String(userData.tg_id);
         const [existing] = await db.select({ tg_id: isu.tg_id }).from(isu).where(eq(isu.tg_id, tgIdKey)).limit(1);
         if (!existing) {
-            const utm = prop?.utm || "-";
-            const username = user.username ? `@${user.username}` : "Noma'lum";
+            const utm = prop?.utm || "Xudo biladi 🤷‍♂️";
+            const username = user.username ? `@${user.username}` : "Yo'q";
             const userlink = userLink(userData);
             const msg =
                 `🆕 Yangi foydalanuvchi:\n\n👤 Ism: ${userlink}\n🔗 Username: ${username}\n` +
@@ -99,7 +99,7 @@ export async function saveGroup(ctx: Context, prop?: { today_count?: number; tot
         const [existing] = await db.select({ chat_id: isg.chat_id }).from(isg).where(eq(isg.chat_id, chatIdKey)).limit(1);
         if (!existing) {
             const chatlink = groupLink(chat);
-            const username = chat.username ? `@${chat.username}` : "Noma'lum";
+            const username = chat.username ? `@${chat.username}` : "Yo'q";
             const addedBy = from
                 ? `👤 Qo'shgan: ${userLink({
                       tg_id: from.id,

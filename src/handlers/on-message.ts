@@ -66,14 +66,7 @@ export const onMessageText = async (ctx: Filter<Context, "message:text">) => {
                 } else return;
             }
 
-            let keepSendingChatAction = true;
-            const chatActionLoop = (async () => {
-                const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-                while (keepSendingChatAction) {
-                    await ctx.api.sendChatAction(ctx.chat.id, "upload_document").catch(() => {});
-                    await delay(4000);
-                }
-            })();
+            await ctx.api.sendChatAction(ctx.chat.id, "upload_document").catch(() => {});
 
             const allMediaFiles: MediaFile[] = [];
 
@@ -112,8 +105,6 @@ export const onMessageText = async (ctx: Filter<Context, "message:text">) => {
                     }
                 }
 
-                keepSendingChatAction = false;
-                await chatActionLoop.catch(() => {});
                 await counter(ctx);
                 return;
             }
@@ -132,8 +123,6 @@ export const onMessageText = async (ctx: Filter<Context, "message:text">) => {
                 });
             }
 
-            keepSendingChatAction = false;
-            await chatActionLoop.catch(() => {});
             await counter(ctx, allMediaFiles.length);
         } catch (err) {
             try {

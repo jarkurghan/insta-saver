@@ -1,6 +1,7 @@
 import { Hono } from "hono";
-import { handleUpdate } from "./bot";
+import { handleUpdate } from "@/bot";
 import { logger } from "hono/logger";
+import { bot } from "@/bot";
 
 const app = new Hono();
 
@@ -11,7 +12,4 @@ app.post("/bot", handleUpdate);
 
 export default app;
 
-// import "@/db";
-// import { startBot } from "@/bot";
-
-// startBot();
+// bot.start({ onStart: (bot) => console.log(`Bot started as https://t.me/${bot.username}`) });
