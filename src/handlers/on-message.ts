@@ -51,7 +51,6 @@ function extractInstagramUrls(text: string): string[] {
 export const onMessageText = async (ctx: Filter<Context, "message:text">) => {
     (async () => {
         try {
-    console.log("id",ctx.msg!.message_id);
             if (ctx.message.sender_chat?.type === "channel") return;
             if (ctx.chat.id === Number(LOG_CHANNEL_ID)) return;
 
